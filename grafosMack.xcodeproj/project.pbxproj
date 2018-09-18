@@ -25,6 +25,7 @@
 /* Begin PBXFileReference section */
 		C08D04E82135647C00974E73 /* grafosMack */ = {isa = PBXFileReference; explicitFileType = "compiled.mach-o.executable"; includeInIndex = 0; path = grafosMack; sourceTree = BUILT_PRODUCTS_DIR; };
 		C08D04EB2135647C00974E73 /* main.c */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.c; path = main.c; sourceTree = "<group>"; };
+		C08D04F521380D2E00974E73 /* ordtopo.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ordtopo.txt; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -58,6 +59,7 @@
 			isa = PBXGroup;
 			children = (
 				C08D04EB2135647C00974E73 /* main.c */,
+				C08D04F521380D2E00974E73 /* ordtopo.txt */,
 			);
 			path = grafosMack;
 			sourceTree = "<group>";
