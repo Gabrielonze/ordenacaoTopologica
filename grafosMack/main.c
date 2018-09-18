@@ -26,9 +26,6 @@ void libera(TGrafo *grafo);
 int ehCaminho(TGrafo *grafo, int seq[], int N);
 void buscaProf(TGrafo *grafo);
 void buscaProfRec(TGrafo *grafo, int v, int *visitados);
-void achaCaminho(TGrafo *G, int de, int para);
-int achaCaminhoRec(TGrafo *G, int de, int para, int *visitados, int *caminho);
-void mostraCaminho(int *caminho, int de, int para);
 TGrafo *carregarGrafo(char fileName[]);
 int** criarM(int linhas, int coluna);
 void completM (char *taskName, int **mChar, int i);
@@ -44,23 +41,11 @@ int main (void){
     TGrafo *G;// variavel ponteiro
     char filePath[] = "/Users/gabriel/Documents/grafosMack/grafosMack/ordtopo.txt";
     G = carregarGrafo(filePath);
-    /*insereA(G,0,2);
-    insereA(G,0,3);
-    insereA(G,0,4);
-    insereA(G,2,4);
-    insereA(G,3,4);
-    insereA(G,3,5);
-    insereA(G,4,5);
-    insereA(G,4,1);*/
-    //show(G);
-    
+
     //printf("buscaProf=");
     //buscaProf(G);
     
-    //achaCaminho(G, 0, 1);
-    //achaCaminho(G, 5, 1);
-    //achaCaminho(G, 3, 12);
-    show(G);
+    //show(G);
     ordenacaoTop(G);
     libera(G);
     printf("\n\nfim\n");
@@ -173,57 +158,6 @@ void buscaProfRec(TGrafo *G, int v, int *visitados){
     }
 }
 
-void achaCaminho(TGrafo *G, int de, int para){
-    int *visitados = (int*)calloc(G->V, sizeof(int));
-    int *caminho = (int*)calloc(G->V, sizeof(int));
-    if(achaCaminhoRec(G, de, para, visitados, caminho)){
-        printf("\nExiste Caminho %i->%i\n", de, para);
-        mostraCaminho(caminho, de, para);
-    } else {
-        printf("\nNão existe caminho %i->%i\n", de, para);
-    }
-    free(visitados);
-    free(caminho);
-}
-
-int achaCaminhoRec(TGrafo *G, int de, int para, int *visitados, int *caminho){
-    visitados[de] = 1;
-    int achou = 0;
-    TNo *p = G->adj[de];
-    while(p && achou == 0){
-        int w = p->w;
-        caminho[de] = w;
-        
-        if(w == para){
-            achou = 1;
-            return 1;
-        }
-        
-        if(!visitados[w] && achou == 0){
-            achou = achaCaminhoRec(G, w, para, visitados, caminho);
-        }
-        p = p->prox;
-    }
-    return achou;
-}
-
-void mostraCaminho(int *caminho, int de, int para) {
-    /*int a;
-    printf("\n----\n");
-    for(a = 1; a < 13; a++){
-        printf("\n%d - %d\n", a, caminho[a]);
-    }
-    printf("\n----\n");*/
-    
-    int prox = caminho[de];
-    printf("*| %i ->", de);
-    while(prox != para){
-        printf(" %i ->", prox);
-        prox = caminho[prox];
-    }
-    printf(" %i |*\n", para);
-}
-
 // ---- Ordenacao topologica
 
 
@@ -261,9 +195,9 @@ TGrafo *carregarGrafo(char fileName[]){ //Carrega o tgrafo de um arquivo
         }
         //printf("%d ",v);
         //printf("%d ",w);
-        //if( checkInsert(tasks, v, w)){
+        if( checkInsert(tasks, v, w)){
             insereA(tasks,v,w);
-        //}
+        }
     }
     return tasks;
 }
@@ -288,7 +222,6 @@ void completM(char *taskName, int **mChar, int i){ //Insere os nomes das tarefas
     }
 }
 
-
 int checkInsert(TGrafo* D, int v, int w){ //Verifica se um vertice pode ser inserido
     if(v == w){ //N„o pode ter um vÈrtice reflexivo
         printf("Par nao pode ser inserido, vertices iguais");
@@ -298,20 +231,20 @@ int checkInsert(TGrafo* D, int v, int w){ //Verifica se um vertice pode ser inse
         printf("O vertice nao pode ser inserido");
         return 0;
     }
-    TNo* p = D->adj[v-1];
+    TNo* p = D->adj[v];
     while(p){ //Enquanto existirem nos
         if(p->w-1 == w ){ //Verifica se estas tarefas j· foram inseridas
-            printf("\nTarefas %d, %d ja inseridas ",v,w);
+            printf("\nTarefas (%d) e (%d) ja inseridas\n",v,w);
             return 0;
         }
         p = p->prox;
     }
     int * visited = (int *) calloc(D->V,sizeof(int));
-    buscaProfRec(D,w-1,visited); //Realiza a busca em profundidade
-    if(visited[v-1] == 0){ //Se v-1 no foi visitado, retorna verdadeiro
+    buscaProfRec(D,w,visited); //Realiza a busca em profundidade
+    if(visited[v] == 0){ //Se v-1 no foi visitado, retorna verdadeiro
         return 1;
     } else{ //Se n„o, eles formam um ciclo e retorna falso, pois n„o podem ser inseridos
-        printf("\nVertice %d e %d forma ciclo, nao pode ser inserido",v,w);
+        printf("\nVertice (%d) e (%d) forma ciclo, nao pode ser inserido\n\n",v,w);
         return 0;
     }
 }
