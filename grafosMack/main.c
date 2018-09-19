@@ -29,10 +29,11 @@ void buscaProfRec(TGrafo *grafo, int v, int *visitados);
 TGrafo *carregarGrafo(char fileName[]);
 int** criarM(int linhas, int coluna);
 void completM (char *taskName, int **mChar, int i);
-int checkInsert(TGrafo* D,int v,int w);
-void ordenacaoTop(TGrafo* D);
-int indeg(TGrafo* D,int v);
+int checkInsert(TGrafo* G,int v,int w);
+void ordenacaoTop(TGrafo* G);
+int indeg(TGrafo* G,int v);
 char * achaNome (int i);
+void removeV(TGrafo* G,int v);
 
 //Global Vars
 int **mChar;
@@ -222,16 +223,16 @@ void completM(char *taskName, int **mChar, int i){ //Insere os nomes das tarefas
     }
 }
 
-int checkInsert(TGrafo* D, int v, int w){ //Verifica se um vertice pode ser inserido
+int checkInsert(TGrafo* G, int v, int w){ //Verifica se um vertice pode ser inserido
     if(v == w){ //N„o pode ter um vÈrtice reflexivo
         printf("Par nao pode ser inserido, vertices iguais");
         return 0;
     }
-    if( v > D->V || w > D->V){ //Se um dos nos È maior do que a quantidade total de vÈrtices
+    if( v > G->V || w > G->V){ //Se um dos nos È maior do que a quantidade total de vÈrtices
         printf("O vertice nao pode ser inserido");
         return 0;
     }
-    TNo* p = D->adj[v];
+    TNo* p = G->adj[v];
     while(p){ //Enquanto existirem nos
         if(p->w-1 == w ){ //Verifica se estas tarefas j· foram inseridas
             printf("\nTarefas (%d) e (%d) ja inseridas\n",v,w);
@@ -239,8 +240,8 @@ int checkInsert(TGrafo* D, int v, int w){ //Verifica se um vertice pode ser inse
         }
         p = p->prox;
     }
-    int * visited = (int *) calloc(D->V,sizeof(int));
-    buscaProfRec(D,w,visited); //Realiza a busca em profundidade
+    int * visited = (int *) calloc(G->V,sizeof(int));
+    buscaProfRec(G,w,visited); //Realiza a busca em profundidade
     if(visited[v] == 0){ //Se v-1 no foi visitado, retorna verdadeiro
         return 1;
     } else{ //Se n„o, eles formam um ciclo e retorna falso, pois n„o podem ser inseridos
@@ -250,34 +251,37 @@ int checkInsert(TGrafo* D, int v, int w){ //Verifica se um vertice pode ser inse
 }
 
 void ordenacaoTop(TGrafo* G){ //Realiza a ordenaÁ„o topolÛgica
-    int * graus = (int * )calloc (G->V,sizeof(int));
-    int * sequencia = (int *) calloc(G->V,sizeof(int));
-    int iteraSequencia =0;
+    int* graus = (int *)calloc (G->V, sizeof(int));
+    int* sequencia = (int *) calloc(G->V, sizeof(int));
+    int grauAtual = 0;
+    int iteraSequencia = 0;
     int i, countV = G->V;
-    while(countV > 0){ //Enquanto existirem vÈrtices
-        
-        for(i = 0;i < G->V;i++){
-            graus[i] = indeg(G, i+1); //Seta o grau de [i] como o seu grau de entrada
-        }
+    
+    for(i = 1; i < G->V; i++){
+        graus[i] = indeg(G, i); //Seta o grau de [i] como o seu grau de entrada
+    }
+    
+    while(countV > 1){ //Enquanto existirem vÈrtices
         
         for(i = 1; i < G->V;i++){
-            if(graus[i] == 0 && sequencia[i] == 0){
+            if(graus[i] == grauAtual && sequencia[i] == 0){
                 countV --; //Remove 1 no contador de vÈrtices, controlando o while
                 printf("Tarefa %d: %s \n", i, achaNome(i)); //Exibe a tarefa
                 sequencia[i] = ++iteraSequencia;
-                //removeV(G,i+1); //Remove o vÈrtice do dÌgrafo
+                removeV(G, i); //Remove o vÈrtice do dÌgrafo
             }
         }
+        grauAtual++;
     }
 }
 
 int indeg(TGrafo* G,int v){ //Retorna o grau de entrada de um nÛ
     int i;
     int indeg = 0;
-    for(i = 0;i < G->V; i++){
+    for(i = 1;i < G->V; i++){
         TNo* p = G->adj[i];
         while(p){ //Enquanto existirem nÛs
-            if(p->w == v && i != v - 1){ //Se o elemento do nÛ P for V e i for != de v-1
+            if(p->w == v && i != v){ //Se o elemento do nÛ P for V e i for != de v-1
                 indeg++; //Aumenta em 1 o grau de entrada
                 break;
             }
@@ -295,4 +299,34 @@ char* achaNome (int i){ //Retorna o nome de uma atividade
         nome[j] = mChar[i][j];
     }
     return nome;
+}
+
+void removeV(TGrafo* G,int v){ //Remove um vÈrtice do dÌgrafo
+    int i;
+    for(i = 0; i < G->V;i++){
+        if(i != v-1){
+            TNo* p = G->adj[i];
+            TNo* ant = NULL;
+            while(p){
+                if(p->w == v && ant == NULL){
+                    G->adj[i] = p->prox;
+                    (G->A)--;
+                } else if(p->w == v && ant != NULL ){
+                    ant->prox = p->prox;
+                    (G->A)--;
+                }
+                ant = p;
+                p = p->prox;
+            }
+        } else{
+            TNo* p = G->adj[i];
+            int contA = 0;
+            while(p){
+                contA++;
+                p= p->prox;
+            }
+            G->adj[i] = NULL;
+            (G->A)-= contA;
+        }
+    }
 }
