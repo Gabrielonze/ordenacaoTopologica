@@ -5,7 +5,6 @@
 
 typedef struct _TNo{
     int w;
-    char *nomeTarefa;
     struct _TNo *prox;
 }TNo;
 
@@ -13,6 +12,7 @@ typedef struct _TNo{
 typedef struct{
     int V; // quantidade de vértices
     int A; // quantidade de arestas
+    int **vetorNomes;
     TNo **adj; //lista de adjacência
 }TGrafo;
 
@@ -25,15 +25,12 @@ int ehCaminho(TGrafo *grafo, int seq[], int N);
 void buscaProf(TGrafo *grafo);
 void buscaProfRec(TGrafo *grafo, int v, int *visitados);
 TGrafo *carregarGrafo(char fileName[]);
-int **criarVetorNomes(int linhas, int coluna);
+void criarVetorNomes(TGrafo *G, int linhas, int coluna);
 void insereNome (char *nomeTarefa, int **vetorNomes, int i);
 int verificarInsercao(TGrafo *G,int v,int w);
 void ordenacaoTop(TGrafo *G);
 int achaGrau(TGrafo *G,int v);
-char *achaNome (int i);
-
-//Variaveis Globais
-int **vetorNomes;
+char *achaNome (TGrafo *G, int i);
 
 int main (void){
     TGrafo *G;
@@ -82,7 +79,6 @@ void insereNo( TGrafo *G, int v, int w){
     TNo *novo = (TNo*)calloc(1, sizeof(TNo));
     novo->w = w;
     novo->prox = aux;
-    novo->nomeTarefa = achaNome(w);
     if( ant == NULL)
         G->adj[v] = novo;
     else
@@ -101,7 +97,7 @@ void mostrarGrafo(TGrafo *G){
             printf("Vertice: (%d)\n",i);
             
             while(p){
-                printf("-> %d) %s",p->w, p->nomeTarefa);
+                printf("-> %d) %s",p->w, achaNome(G, p->w));
                 p = p->prox;
             }
         } else { printf("Vertice: (%d) Vazio\n", i); }
@@ -125,6 +121,7 @@ void libera(TGrafo *grafo){
         }
     }
     free(grafo->adj);
+    free(grafo->vetorNomes);
     free(grafo);
 }
 
@@ -158,7 +155,6 @@ TGrafo *carregarGrafo(char fileName[]){
     int j;
     int quantidadeTarefas;
     int contV;
-    int **vetorNomes;
     
     FILE file = *fopen(fileName,"r");
     char *nomeTarefa = (char*) calloc(100, sizeof(char));
@@ -166,14 +162,15 @@ TGrafo *carregarGrafo(char fileName[]){
     fgets(nomeTarefa, 100, &file);
     quantidadeTarefas = atoi(nomeTarefa);
     printf("Numero de tarefas: %d \n\n",quantidadeTarefas);
+    TGrafo *G;
+    G = init(quantidadeTarefas);
     
-    vetorNomes = criarVetorNomes(quantidadeTarefas+1, 100);
-    TGrafo *tasks;
-    tasks = init(quantidadeTarefas);
+    criarVetorNomes(G, quantidadeTarefas+1, 100);
+    
     
     for(i = 0; i < quantidadeTarefas; i++){
         fgets(nomeTarefa, 100, &file);
-        insereNome(nomeTarefa, vetorNomes, i+1);
+        insereNome(nomeTarefa, G->vetorNomes, i+1);
     }
     
     fgets(nomeTarefa, 100, &file);
@@ -185,24 +182,23 @@ TGrafo *carregarGrafo(char fileName[]){
         if((fscanf(&file,"%d",&v) == EOF) ||  (fscanf(&file,"%d",&w) == EOF)){
             break;
         }
-        if( verificarInsercao(tasks, v, w)){
-            insereNo(tasks,v,w);
+        if( verificarInsercao(G, v, w)){
+            insereNo(G,v,w);
         }
     }
-    return tasks;
+    return G;
 }
 
-int **criarVetorNomes(int linhas, int coluna){
+void criarVetorNomes(TGrafo *G, int linhas, int coluna){
     int i,j;
-    vetorNomes = (int**)malloc(linhas * sizeof(int*));
+    G->vetorNomes = (int**)malloc(linhas * sizeof(int*));
     
     for (i = 1; i < linhas; i++){
-        vetorNomes[i] = (int*) malloc(coluna * sizeof(int));
+        G->vetorNomes[i] = (int*) malloc(coluna * sizeof(int));
         for (j = 0; j < coluna; j++){
-            vetorNomes[i][j] = 0;
+            G->vetorNomes[i][j] = 0;
         }
     }
-    return vetorNomes;
 }
 
 void insereNome(char *nomeTarefa, int **vetorNomes, int i){
@@ -255,7 +251,7 @@ void ordenacaoTop(TGrafo *G){
         for(i = 1; i < G->V;i++){
             if(graus[i] == grauAtual && sequencia[i] == 0){
                 countV --;
-                printf("Tarefa %d: %s \n", i, achaNome(i));
+                printf("Tarefa %d: %s \n", i, achaNome(G, i));
                 sequencia[i] = ++iteraSequencia;
             }
         }
@@ -279,12 +275,12 @@ int achaGrau(TGrafo *G,int v){
     return achaGrau;
 }
 
-char *achaNome (int i){
+char *achaNome (TGrafo *G, int i){
     char *nome = (char*)calloc(100, sizeof(char));
     int j;
     
     for (j = 0; j<100; j++){
-        nome[j] = vetorNomes[i][j];
+        nome[j] = G->vetorNomes[i][j];
     }
     return nome;
 }
