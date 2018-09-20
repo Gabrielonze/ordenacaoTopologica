@@ -3,11 +3,9 @@
 #include<stdio.h>
 #include<stdlib.h>
 
-//declaracao das estruturas e tipos
-//estrura para representar o no da lista de adjacencia
 typedef struct _TNo{
-    int w; // aresta (v-w), onde w eh vertice adjacente em relacao a v
-    char* taskName;
+    int w;
+    char *nomeTarefa;
     struct _TNo *prox;
 }TNo;
 
@@ -19,34 +17,29 @@ typedef struct{
 }TGrafo;
 
 //declaracao das funcoes
-TGrafo* init( int V );
-void insereA( TGrafo *G, int v, int w);
-void show(TGrafo *G);
+TGrafo *init( int V );
+void insereNo( TGrafo *G, int v, int w);
+void mostrarGrafo(TGrafo *G);
 void libera(TGrafo *grafo);
 int ehCaminho(TGrafo *grafo, int seq[], int N);
 void buscaProf(TGrafo *grafo);
 void buscaProfRec(TGrafo *grafo, int v, int *visitados);
 TGrafo *carregarGrafo(char fileName[]);
-int** criarM(int linhas, int coluna);
-void completM (char *taskName, int **mChar, int i);
-int checkInsert(TGrafo* G,int v,int w);
-void ordenacaoTop(TGrafo* G);
-int indeg(TGrafo* G,int v);
-char * achaNome (int i);
-void removeV(TGrafo* G,int v);
+int **criarVetorNomes(int linhas, int coluna);
+void insereNome (char *nomeTarefa, int **vetorNomes, int i);
+int verificarInsercao(TGrafo *G,int v,int w);
+void ordenacaoTop(TGrafo *G);
+int achaGrau(TGrafo *G,int v);
+char *achaNome (int i);
 
-//Global Vars
-int **mChar;
+//Variaveis Globais
+int **vetorNomes;
 
 int main (void){
-    TGrafo *G;// variavel ponteiro
+    TGrafo *G;
     char filePath[] = "/Users/gabriel/Documents/grafosMack/grafosMack/ordtopo.txt";
     G = carregarGrafo(filePath);
 
-    //printf("buscaProf=");
-    //buscaProf(G);
-    
-    //show(G);
     ordenacaoTop(G);
     libera(G);
     printf("\n\nfim\n");
@@ -58,7 +51,7 @@ int main (void){
  os atributos da estrutura, cria uma matriz de matriz de
  adjacência para V vértices e zera os valores para arestas.
  */
-TGrafo* init( int V ){
+TGrafo *init( int V ){
     //cria e devolve uma nova estrutura TGrafo
     TGrafo *grafo=(TGrafo*)calloc(1,sizeof(TGrafo));
     // inicializa os atributos da estrutura,
@@ -74,13 +67,12 @@ TGrafo* init( int V ){
  Se o grafo já tem a aresta v-w, a função não faz nada.
  A função também atualiza a quantidade de arestas no grafo.
  */
-void insereA( TGrafo *G, int v, int w){
+void insereNo( TGrafo *G, int v, int w){
     
     TNo *aux, *ant;
     aux = G->adj[v];
     ant = NULL;
     while( aux && aux->w <= w ){
-        //Se o grafo j· tem a aresta v-w, a funÁ„o n„o faz nada.
         if( aux->w == w)
             return;
         
@@ -90,7 +82,7 @@ void insereA( TGrafo *G, int v, int w){
     TNo *novo = (TNo*)calloc(1, sizeof(TNo));
     novo->w = w;
     novo->prox = aux;
-    novo->taskName = achaNome(w);
+    novo->nomeTarefa = achaNome(w);
     if( ant == NULL)
         G->adj[v] = novo;
     else
@@ -101,15 +93,15 @@ void insereA( TGrafo *G, int v, int w){
  Para cada vértice v do grafo, esta função imprime, em uma linha,
  todos os vértices adjacentes a v.
  */
-void show(TGrafo *G){
+void mostrarGrafo(TGrafo *G){
     int i;
     for( i = 1; i< G->V; i++){
         TNo *p = G->adj[i];
         if(p){
             printf("Vertice: (%d)\n",i);
             
-            while(p){ //Enquanto existirem nÛs para serem exibidos
-                printf("-> %d) %s",p->w, p->taskName);
+            while(p){
+                printf("-> %d) %s",p->w, p->nomeTarefa);
                 p = p->prox;
             }
         } else { printf("Vertice: (%d) Vazio\n", i); }
@@ -148,7 +140,6 @@ void buscaProf(TGrafo *G){
 
 void buscaProfRec(TGrafo *G, int v, int *visitados){
     visitados[v] = 1;
-    //printf("%d ", v);
     TNo *p = G->adj[v];
     while(p){
         int w = p->w;
@@ -162,31 +153,31 @@ void buscaProfRec(TGrafo *G, int v, int *visitados){
 // ---- Ordenacao topologica
 
 
-TGrafo *carregarGrafo(char fileName[]){ //Carrega o tgrafo de um arquivo
+TGrafo *carregarGrafo(char fileName[]){
     int i;
     int j;
-    int taskcont;
+    int quantidadeTarefas;
     int contV;
-    int **mChar;
+    int **vetorNomes;
     
     FILE file = *fopen(fileName,"r");
-    char *taskName = (char*) calloc(100, sizeof(char));
+    char *nomeTarefa = (char*) calloc(100, sizeof(char));
 
-    fgets(taskName, 100, &file);
-    taskcont = atoi(taskName);
-    printf("Numero de tarefas: %d \n\n",taskcont);
+    fgets(nomeTarefa, 100, &file);
+    quantidadeTarefas = atoi(nomeTarefa);
+    printf("Numero de tarefas: %d \n\n",quantidadeTarefas);
     
-    mChar = criarM(taskcont+1, 100);
+    vetorNomes = criarVetorNomes(quantidadeTarefas+1, 100);
     TGrafo *tasks;
-    tasks = init(taskcont);
+    tasks = init(quantidadeTarefas);
     
-    for(i = 0; i < taskcont; i++){
-        fgets(taskName, 100, &file);
-        completM(taskName, mChar, i+1);
+    for(i = 0; i < quantidadeTarefas; i++){
+        fgets(nomeTarefa, 100, &file);
+        insereNome(nomeTarefa, vetorNomes, i+1);
     }
     
-    fgets(taskName, 100, &file);
-    contV = atoi(taskName);
+    fgets(nomeTarefa, 100, &file);
+    contV = atoi(nomeTarefa);
     printf("Numero de arestas: %d\n\n", contV);
     
     for(j = 0; j < contV; j++){
@@ -194,139 +185,106 @@ TGrafo *carregarGrafo(char fileName[]){ //Carrega o tgrafo de um arquivo
         if((fscanf(&file,"%d",&v) == EOF) ||  (fscanf(&file,"%d",&w) == EOF)){
             break;
         }
-        //printf("%d ",v);
-        //printf("%d ",w);
-        if( checkInsert(tasks, v, w)){
-            insereA(tasks,v,w);
+        if( verificarInsercao(tasks, v, w)){
+            insereNo(tasks,v,w);
         }
     }
     return tasks;
 }
 
-int** criarM(int linhas, int coluna){ //Cria o vetor com o nome das tarefas
+int **criarVetorNomes(int linhas, int coluna){
     int i,j;
-    mChar = (int**)malloc(linhas * sizeof(int*)); //Apenas aloca os espaÁos de memÛria para o vetor de vetores.
+    vetorNomes = (int**)malloc(linhas * sizeof(int*));
     
     for (i = 1; i < linhas; i++){
-        mChar[i] = (int*) malloc(coluna * sizeof(int));
+        vetorNomes[i] = (int*) malloc(coluna * sizeof(int));
         for (j = 0; j < coluna; j++){
-            mChar[i][j] = 0;
+            vetorNomes[i][j] = 0;
         }
     }
-    return mChar;
+    return vetorNomes;
 }
 
-void completM(char *taskName, int **mChar, int i){ //Insere os nomes das tarefas vindos de um arquivo para o vetor
+void insereNome(char *nomeTarefa, int **vetorNomes, int i){
     int j;
     for(j = 0;j < 100;j++){
-        mChar[i][j] = taskName[j];
+        vetorNomes[i][j] = nomeTarefa[j];
     }
 }
 
-int checkInsert(TGrafo* G, int v, int w){ //Verifica se um vertice pode ser inserido
-    if(v == w){ //N„o pode ter um vÈrtice reflexivo
+int verificarInsercao(TGrafo *G, int v, int w){
+    if(v == w){
         printf("Par nao pode ser inserido, vertices iguais");
         return 0;
     }
-    if( v > G->V || w > G->V){ //Se um dos nos È maior do que a quantidade total de vÈrtices
+    if( v > G->V || w > G->V){
         printf("O vertice nao pode ser inserido");
         return 0;
     }
-    TNo* p = G->adj[v];
-    while(p){ //Enquanto existirem nos
-        if(p->w-1 == w ){ //Verifica se estas tarefas j· foram inseridas
+    TNo *p = G->adj[v];
+    while(p){
+        if(p->w-1 == w ){
             printf("\nTarefas (%d) e (%d) ja inseridas\n",v,w);
             return 0;
         }
         p = p->prox;
     }
-    int * visited = (int *) calloc(G->V,sizeof(int));
-    buscaProfRec(G,w,visited); //Realiza a busca em profundidade
-    if(visited[v] == 0){ //Se v-1 no foi visitado, retorna verdadeiro
+    int *visitado = (int *) calloc(G->V,sizeof(int));
+    buscaProfRec(G,w,visitado);
+    if(visitado[v] == 0){
         return 1;
-    } else{ //Se n„o, eles formam um ciclo e retorna falso, pois n„o podem ser inseridos
+    } else{
         printf("\nVertice (%d) e (%d) forma ciclo, nao pode ser inserido\n\n",v,w);
         return 0;
     }
 }
 
-void ordenacaoTop(TGrafo* G){ //Realiza a ordenaÁ„o topolÛgica
-    int* graus = (int *)calloc (G->V, sizeof(int));
-    int* sequencia = (int *) calloc(G->V, sizeof(int));
+void ordenacaoTop(TGrafo *G){
+    int *graus = (int *)calloc (G->V, sizeof(int));
+    int *sequencia = (int *) calloc(G->V, sizeof(int));
     int grauAtual = 0;
     int iteraSequencia = 0;
     int i, countV = G->V;
     
     for(i = 1; i < G->V; i++){
-        graus[i] = indeg(G, i); //Seta o grau de [i] como o seu grau de entrada
+        graus[i] = achaGrau(G, i);
     }
     
-    while(countV > 1){ //Enquanto existirem vÈrtices
+    while(countV > 1){
         
         for(i = 1; i < G->V;i++){
             if(graus[i] == grauAtual && sequencia[i] == 0){
-                countV --; //Remove 1 no contador de vÈrtices, controlando o while
-                printf("Tarefa %d: %s \n", i, achaNome(i)); //Exibe a tarefa
+                countV --;
+                printf("Tarefa %d: %s \n", i, achaNome(i));
                 sequencia[i] = ++iteraSequencia;
-                removeV(G, i); //Remove o vÈrtice do dÌgrafo
             }
         }
         grauAtual++;
     }
 }
 
-int indeg(TGrafo* G,int v){ //Retorna o grau de entrada de um nÛ
+int achaGrau(TGrafo *G,int v){
     int i;
-    int indeg = 0;
+    int achaGrau = 0;
     for(i = 1;i < G->V; i++){
-        TNo* p = G->adj[i];
-        while(p){ //Enquanto existirem nÛs
-            if(p->w == v && i != v){ //Se o elemento do nÛ P for V e i for != de v-1
-                indeg++; //Aumenta em 1 o grau de entrada
+        TNo *p = G->adj[i];
+        while(p){
+            if(p->w == v && i != v){
+                achaGrau++;
                 break;
             }
             p = p->prox;
         }
     }
-    return indeg;
+    return achaGrau;
 }
 
-char* achaNome (int i){ //Retorna o nome de uma atividade
-    char * nome = (char*)calloc(100, sizeof(char));
+char *achaNome (int i){
+    char *nome = (char*)calloc(100, sizeof(char));
     int j;
     
     for (j = 0; j<100; j++){
-        nome[j] = mChar[i][j];
+        nome[j] = vetorNomes[i][j];
     }
     return nome;
-}
-
-void removeV(TGrafo* G,int v){ //Remove um vÈrtice do dÌgrafo
-    int i;
-    for(i = 0; i < G->V;i++){
-        if(i != v-1){
-            TNo* p = G->adj[i];
-            TNo* ant = NULL;
-            while(p){
-                if(p->w == v && ant == NULL){
-                    G->adj[i] = p->prox;
-                    (G->A)--;
-                } else if(p->w == v && ant != NULL ){
-                    ant->prox = p->prox;
-                    (G->A)--;
-                }
-                ant = p;
-                p = p->prox;
-            }
-        } else{
-            TNo* p = G->adj[i];
-            int contA = 0;
-            while(p){
-                contA++;
-                p= p->prox;
-            }
-            G->adj[i] = NULL;
-            (G->A)-= contA;
-        }
-    }
 }
